@@ -1,0 +1,96 @@
+my-scriptwriting-assistant/
+│
+├── app.py
+├── requirements.txt
+├── runtime.txt
+├── Procfile
+└── templates/
+    └── index.html
+
+
+
+Flask==2.0.2
+openai==0.10.0
+gunicorn==20.1.0
+
+
+
+
+python-3.9.7
+
+
+web: gunicorn app:app
+
+
+
+app.py
+
+from flask import Flask, render_template, request, jsonify
+import openai
+
+app = Flask(__name__)
+
+# Set your OpenAI API key here
+openai.api_key = 'YOUR_OPENAI_API_KEY'
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/analyze_emotion', methods=['POST'])
+def analyze_emotion():
+    user_input = request.form['user_input']
+    prompt = f"Analyze the emotional tone of the following scene and suggest adjustments: {user_input}"
+    
+    response = openai.Completion.create(
+        engine="davinci-codex",
+        prompt=prompt,
+        max_tokens=150
+    )
+    return jsonify(response['choices'][0]['text'].strip())
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+index.html
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Script Writing Assistant</title>
+</head>
+<body>
+    <h1>AI Script Writing Assistant</h1>
+    <form id="emotion-analysis-form">
+        <label for="user_input">Enter your scene:</label><br>
+        <textarea id="user_input" name="user_input" rows="4" cols="50"></textarea><br>
+        <input type="submit" value="Analyze Emotion">
+    </form>
+    <h2>Emotion Analysis Output:</h2>
+    <div id="emotion-analysis-output"></div>
+
+    <script>
+        document.getElementById('emotion-analysis-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            let userInput = document.getElementById('user_input').value;
+            fetch('/analyze_emotion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: 'user_input=' + encodeURIComponent(userInput)
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('emotion-analysis-output').innerText = data;
+            });
+        });
+    </script>
+</body>
+</html>
